@@ -9,11 +9,25 @@
 *go to page 12. you can see list of i2c registers
 *Address of bq27210 is 0x55. if you have different battery ,
 *add " I2c.scan(); " to void setup() and change the address on every command
+*
+*Appended with volt measurements by Adrian YO3HJV 0 http://yo3hjv.blogspot.com
+*Check here for further explanation on ADC's: http://www.eetimes.com/document.asp?doc_id=1276974
+*Version 1.1 May 2016
 */
+
+
 #include <I2C.h> //i2cmaster lib is easy to use and supports smbus + i2c batts
 int CYCT=0;
 int CYCL=0;
 int SOC=0;
+byte vltMSB = 0;
+byte vltLSB = 0;
+int mlV = 0;
+
+
+byte battery = 0x55;    // write here I2C battery address
+
+
 void setup() {
 I2c.begin(); //We should start i2c
 Serial.begin(9600); //9600baud will be enough
@@ -23,28 +37,59 @@ Serial.println("Written By Ugur Kircil");
 Serial.println("");
 Serial.println("");
 digitalWrite(13,HIGH); //LED will be high while scanning battery
-I2c.scan(); // add // if you want to test i2c bus and scan batt
+ // add // if you want to test i2c bus and scan batt
+//I2c.scan();
 digitalWrite(13,LOW); //LOW the LED
 }
 
 void loop() {
-I2c.read(0x0d, 0x2a ,8); //Read 0x2a address in 0x55 device 
+
+
+I2c.read(battery, 0x2a ,8); //Read 0x2a address in 0x55 device 
 int CYCT = I2c.receive(); 
 Serial.print("Total Cycle Count : ");
 Serial.print(CYCT); //print 0x2a address to serial terminal
 Serial.print(" cycles");
 Serial.println("");
-I2c.read(0x0d, 0x28 ,8);
+
+
+I2c.read(battery, 0x28 ,8);
 int CYCL = I2c.receive();
 Serial.print("Cycle Count Since Learning Cycle : ");
 Serial.print(CYCL);
 Serial.print(" cycles");
 Serial.println("");  
-I2c.read(0x0d, 0x0B ,8);
+
+
+
+I2c.read(battery, 0x0B ,8);
 int SOC = I2c.receive();
-Serial.print("State Of Charge : %");
+Serial.print("State Of Charge : % ");
 Serial.print(SOC);
 Serial.println("");  
 
- delay(5000); //it will refresh in every 5sec
+
+I2c.read(battery, 0x08 ,8);
+byte vltLSB = I2c.receive();
+
+I2c.read(battery, 0x09 ,8);
+byte vltMSB = I2c.receive();
+
+
+int mlV = (vltMSB * 256 + vltLSB); // voltage in mV
+
+
+
+// Print milivolts
+Serial.print(" miliVolts ");
+Serial.print(mlV);   
+Serial.print(" mV ");
+Serial.println(""); 
+
+
+
+
+
+
+ delay(3000); //it will refresh in every 5sec
 }
